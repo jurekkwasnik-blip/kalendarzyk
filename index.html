@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#f8fafc">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kalendarzyk">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<title>Kalendarzyk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&text=Kalendarzyk&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg:#f8fafc; --panel:#ffffff; --text:#172033; --muted:#64748b;
+  --line:#e2e8f0; --blue:#2879dc; --blue-pressed:#1d65bd; --soft:#eaf2ff;
+  --danger:#c62828; --shadow:0 18px 55px rgba(15,23,42,.20);
+  --font-size:17px;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; width:100%; height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:var(--font-size); }
+body.dark {
+  color-scheme:dark; --bg:#101318; --panel:#191e26; --text:#edf2f7; --muted:#9aa8ba;
+  --line:#303744; --blue:#5599f5; --blue-pressed:#367bd5; --soft:#202f46; --danger:#ff7777;
+  --shadow:0 18px 55px rgba(0,0,0,.45);
+}
+button,input { font:inherit; }
+button { cursor:pointer; }
+.app { height:100%; height:100dvh; display:flex; flex-direction:column; max-width:760px; margin:0 auto; background:var(--bg); padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+header { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid var(--line); }
+.brand { display:flex; align-items:center; gap:10px; font-size:.95em; font-weight:600; letter-spacing:.14em; }
+.brand span { font-family:'Caveat','Bradley Hand','Segoe Print','Comic Sans MS',cursive; font-size:1.55em; font-weight:600; letter-spacing:.06em; line-height:1; }
+.brand svg { color:var(--blue); width:25px; height:25px; }
+.header-hint { color:var(--muted); font-size:.72em; }
+.list-wrap { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:8px 16px 20px; scroll-behavior:auto; }
+.list-wrap::-webkit-scrollbar { width:4px; }
+.list-wrap::-webkit-scrollbar-thumb { background:var(--line); border-radius:9px; }
+.empty { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--muted); text-align:center; padding:25px; }
+.empty svg { width:40px; height:40px; opacity:.65; }
+.event { display:grid; grid-template-columns:66px minmax(0,1fr); align-items:center; gap:12px; padding:13px 10px; margin:3px 0; border-radius:12px; user-select:none; -webkit-user-select:none; touch-action:pan-y; }
+.event:active { filter:brightness(.98); }
+/* Kolory terminów: zmienne (tło, kolor stonowany, kolor intensywny) */
+.event.event-past { --c-bg:#e5f5e9; --c-tone:#176534; --c-strong:#0b8a38; }
+.event.event-today { --c-bg:#e5efff; --c-tone:#174ea6; --c-strong:#1357d6; }
+.event.event-future { --c-bg:#ffebeb; --c-tone:#a51d1d; --c-strong:#d11f1f; }
+body.dark .event.event-past { --c-bg:#183526; --c-tone:#a6e5b8; --c-strong:#4fe08a; }
+body.dark .event.event-today { --c-bg:#1b3150; --c-tone:#b8d4ff; --c-strong:#6aa8ff; }
+body.dark .event.event-future { --c-bg:#482323; --c-tone:#ffc0c0; --c-strong:#ff7070; }
+.event { color:var(--c-tone); }
+body.bg-on .event { background:var(--c-bg); }
+.event .event-date span { color:inherit; opacity:.78; }
+body .event.editing { background:var(--soft); outline:1px solid color-mix(in srgb,var(--blue) 38%,transparent); }
+.event-title { color:var(--text); }
+body.txt-color.bg-on .event-title { color:var(--c-tone); }
+body.txt-color:not(.bg-on) .event-title { color:var(--c-strong); }
+body.txt-bold .event-title { font-weight:700; }
+.event-meta { font-size:.74em; opacity:.78; margin-top:2px; }
+.event-date { display:flex; flex-direction:column; align-items:center; gap:2px; font-variant-numeric:tabular-nums; }
+.event-date strong { font-size:.98em; }
+.event-date span { color:var(--muted); font-size:.72em; }
+.event-main { min-width:0; }
+.event-title { overflow-wrap:anywhere; white-space:pre-wrap; }
+.event-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.small-btn { border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:9px; padding:7px 11px; font-size:.82em; }
+.small-btn.primary { color:var(--blue); border-color:var(--blue); }
+.small-btn.danger { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 55%,var(--line)); }
+.editor { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:10px; }
+.editor input { width:100%; min-width:0; color:var(--text); background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:9px; }
+.editor .wide { grid-column:1/-1; }
+.bottom { flex:0 0 auto; padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background:var(--bg); border-top:1px solid var(--line); }
+.add-row { display:grid; grid-template-columns:44px minmax(0,1fr) auto 44px; align-items:center; gap:8px; }
+.icon-btn { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border:0; border-radius:50%; background:transparent; color:var(--muted); }
+.icon-btn svg { width:23px; height:23px; }
+.plus { background:var(--blue); color:white; }
+.plus:active { background:var(--blue-pressed); transform:scale(.97); }
+.name-input { width:100%; min-width:0; height:44px; padding:0 12px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:11px; outline:none; }
+.name-input:focus,.date-input:focus { border-color:var(--blue); box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 18%,transparent); }
+.date-box { position:relative; }
+.date-label { display:block; color:var(--muted); font-size:.62em; margin:0 0 3px 2px; }
+.date-input { width:112px; height:27px; padding:0 2px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; color:var(--text); font-size:.76em; outline:none; }
+.settings-btn { border-radius:12px; }
+.modal-backdrop { position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.42); display:none; align-items:flex-end; justify-content:center; padding:14px; padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
+.modal-backdrop.show { display:flex; overflow-y:auto; align-items:flex-end; }
+.modal { width:100%; max-width:500px; max-height:calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); padding:20px; animation:rise .18s ease-out; }
+@keyframes rise { from { transform:translateY(12px); opacity:.7 } to { transform:translateY(0); opacity:1 } }
+.modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; }
+.modal-head h2 { margin:0; font-size:1.12em; }
+.close-btn { border:0; background:var(--soft); color:var(--text); width:34px; height:34px; border-radius:50%; font-size:1.2em; }
+.setting-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; border-top:1px solid var(--line); }
+.setting-row small { display:block; color:var(--muted); margin-top:4px; font-size:.76em; }
+.switch { width:48px; height:28px; border:0; border-radius:30px; background:#94a3b8; padding:3px; transition:background .15s; }
+.switch::after { content:""; display:block; width:22px; height:22px; background:white; border-radius:50%; transition:transform .15s; }
+.switch[aria-checked="true"] { background:var(--blue); }
+.switch[aria-checked="true"]::after { transform:translateX(20px); }
+.setting-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.toast { position:fixed; z-index:20; left:50%; bottom:calc(90px + env(safe-area-inset-bottom)); transform:translate(-50%,12px); opacity:0; pointer-events:none; padding:10px 14px; border-radius:12px; background:var(--text); color:var(--bg); font-size:.82em; box-shadow:var(--shadow); transition:all .18s; max-width:90vw; text-align:center; }
+.toast.show { opacity:1; transform:translate(-50%,0); }
+body.fullscreen header { display:none; }
+body.fullscreen:not(.fs-entry) .bottom { display:none; }
+body.fullscreen:not(.fs-search) .search-input { display:none; }
+body.fullscreen:not(.fs-filters) .chip { display:none; }
+body.fullscreen:not(.fs-search):not(.fs-filters) .filters { display:none; }
+body.fullscreen .list-wrap { padding-top:10px; }
+.credit { margin-top:8px; text-align:center; color:var(--muted); opacity:.65; font-size:.7em; letter-spacing:.06em; }
+.filters { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:6px 5px; padding:8px 16px; border-bottom:1px solid var(--line); }
+.search-input { flex:1 1 100%; min-width:0; height:36px; padding:0 11px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:10px; outline:none; }
+.search-input:focus { border-color:var(--blue); }
+.chip { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:18px; padding:6px 11px; font-size:.78em; white-space:nowrap; }
+.chip.on { background:var(--soft); color:var(--blue); border-color:var(--blue); }
+.check-row { display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
+.check-row label { display:flex; align-items:center; gap:6px; font-size:.9em; }
+.check-row input { width:20px; height:20px; accent-color:var(--blue); }
+@media (min-width:600px) {
+ .app { border-left:1px solid var(--line); border-right:1px solid var(--line); }
+ .bottom { padding-left:18px; padding-right:18px; }
+ .modal-backdrop { align-items:center; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M7.5 3v4M16.5 3v4M3.5 9.5h17M7 13h3m3 0h3M7 17h3"/></svg>
+      <span>Kalendarzyk</span>
+    </div>
+    <span class="header-hint" id="countLabel"></span>
+  </header>
+  <div class="filters">
+    <input class="search-input" id="searchInput" type="search" placeholder="Szukaj…" aria-label="Szukaj zdarzeń">
+    <button class="chip on" type="button" data-filter="all">Wsz.</button>
+    <button class="chip" type="button" data-filter="upcoming">Nadch.</button>
+    <button class="chip" type="button" data-filter="today">Dziś</button>
+    <button class="chip" type="button" data-filter="past">Byłe</button>
+  </div>
+
+  <main class="list-wrap" id="list" aria-label="Lista zdarzeń"></main>
+
+  <footer class="bottom">
+    <form class="add-row" id="addForm" autocomplete="off">
+      <button class="icon-btn plus" type="submit" aria-label="Dodaj zdarzenie" title="Dodaj zdarzenie">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <input class="name-input" id="eventName" type="text" placeholder="Wpisz zdarzenie…" maxlength="240" aria-label="Nazwa zdarzenia">
+      <div class="date-box">
+        <label class="date-label" for="eventDate">Data</label>
+        <input class="date-input" id="eventDate" type="date" aria-label="Data zdarzenia">
+      </div>
+      <button class="icon-btn settings-btn" type="button" id="settingsBtn" aria-label="Ustawienia" title="Ustawienia">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z" transform="translate(1 2) scale(.9)"/></svg>
+      </button>
+    </form>
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="settingsModal" role="presentation">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-head"><h2 id="settingsTitle">Ustawienia</h2><button class="close-btn" id="closeSettings" aria-label="Zamknij">×</button></div>
+    <div class="setting-row">
+      <div><strong>Tryb Dzień / Noc</strong><small>Wybierz jasny lub ciemny wygląd.</small></div>
+      <button class="switch" id="themeSwitch" role="switch" aria-checked="false" aria-label="Tryb nocny"></button>
+    </div>
+    <div class="setting-row">
+      <div><strong>Wielkość czcionki</strong><small>Możesz też zmieniać ją szczypaniem dwoma palcami na liście.</small></div>
+      <div class="setting-actions"><button class="small-btn" id="fontDown" type="button">A−</button><button class="small-btn" id="fontUp" type="button">A+</button></div>
+    </div>
+    <div class="setting-row">
+      <div><strong>Czcionka</strong><small>Dotyczy tylko treści wpisu, nie daty. Kolor bez tła jest intensywny, z tłem stonowany.</small></div>
+      <div class="check-row"><label><input type="checkbox" id="optBold"> Bold</label><label><input type="checkbox" id="optColor"> Kolor</label></div>
+    </div>
+    <div class="setting-row">
+      <div><strong>Tło</strong><small>Kolorowe tło wpisów: przeszłość, dziś, przyszłość.</small></div>
+      <div class="check-row"><label><input type="checkbox" id="optBg"> Kolor</label></div>
+    </div>
+    <div class="setting-row">
+      <div><strong>Pełny ekran</strong><small>Dodaj stronę do ekranu początkowego i uruchom ją z ikony, aby uzyskać najlepszy efekt.</small></div>
+      <button class="small-btn" id="fullscreenBtn" type="button">Przełącz</button>
+    </div>
+    <div class="setting-row">
+      <div><strong>Pełny ekran: widoczne</strong><small>Co zostaje na ekranie po ukryciu nagłówka. Wyjście z pełnego ekranu: dwukrotne stuknięcie we wpis.</small></div>
+      <div class="check-row"><label><input type="checkbox" id="optFsEntry"> Wpis</label><label><input type="checkbox" id="optFsSearch"> Szukaj</label><label><input type="checkbox" id="optFsFilters"> Filtry</label></div>
+    </div>
+    <div class="setting-row">
+      <div><strong>Kopia zapasowa</strong><small>Eksport zapisuje zdarzenia do pliku JSON, import dołącza je do listy.</small></div>
+      <div class="setting-actions"><button class="small-btn" id="exportBtn" type="button">Eksport</button><button class="small-btn" id="importBtn" type="button">Import</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
+    </div>
+    <div class="setting-row">
+      <div><strong>Lista zdarzeń</strong><small>Zapisane wpisy są przechowywane lokalnie w tej przeglądarce.</small></div>
+      <button class="small-btn danger" id="clearAllBtn" type="button">Wyczyść listę</button>
+    </div>
+    <div class="credit">© Tulasi Studio</div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const STORE_KEY = 'kalendarzyk.events.v1';
+  const SETTINGS_KEY = 'kalendarzyk.settings.v1';
+  let events = load(STORE_KEY, []);
+  let settings = Object.assign({dark:false,fontSize:17,textBold:false,textColor:true,bgColor:true,fsEntry:true,fsSearch:true,fsFilters:true}, load(SETTINGS_KEY, {}));
+  let editingId = null, filter = 'all', query = '';
+  let pressTimer = null, longPressed = false, touchStart = null, pinchStart = null, lastTap = 0, toastTimer = null;
+
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(events)); localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { showToast('Nie udało się zapisać danych w przeglądarce.'); } }
+  function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function formatDate(iso) {
+    if (!iso) return {day:'—',year:''};
+    const [y,m,d] = iso.split('-'); return {day:`${d}.${m}`,year:y};
+  }
+  const WD = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+  function dayDiff(iso) { const [y,m,d] = iso.split('-').map(Number), t = new Date(); return Math.round((Date.UTC(y,m-1,d) - Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())) / 86400000); }
+  function metaText(iso) {
+    const [y,m,d] = iso.split('-').map(Number), n = dayDiff(iso);
+    const rel = n===0 ? 'dziś' : n===1 ? 'jutro' : n===-1 ? 'wczoraj' : n>0 ? `za ${n} dni` : `${-n} dni temu`;
+    return `${WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]} · ${rel}`;
+  }
+  function visibleEvents() {
+    const t = todayISO(), q = query.trim().toLocaleLowerCase('pl');
+    return events.filter(e => (filter==='all' || (filter==='upcoming' ? e.date > t : filter==='today' ? e.date === t : e.date < t)) &&
+      (!q || e.title.toLocaleLowerCase('pl').includes(q) || e.date.split('-').reverse().join('.').includes(q)));
+  }
+  function scrollToToday() {
+    const list = $('list'), els = [...list.querySelectorAll('.event')]; if (!els.length) return;
+    const target = els.find(el => !el.classList.contains('event-past'));
+    if (!target) { list.scrollTop = list.scrollHeight; return; }
+    list.scrollTop += target.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
+  }
+  function scrollToId(id) { const el = document.querySelector('.event[data-id="'+CSS.escape(id)+'"]'); if (el) el.scrollIntoView({block:'center'}); }
+  function syncChips() { document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('on', b.dataset.filter === filter)); }
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify({app:'kalendarzyk', version:1, events}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `kalendarzyk-${todayISO()}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    showToast(`Wyeksportowano: ${events.length}.`);
+  }
+  function importJSON(e) {
+    const file = e.target.files[0]; if (!file) return;
+    file.text().then(txt => {
+      const data = JSON.parse(txt), arr = Array.isArray(data) ? data : data.events;
+      if (!Array.isArray(arr)) throw new Error('format');
+      let added = 0;
+      arr.forEach(x => {
+        if (!x || typeof x.title !== 'string' || !x.title.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(x.date || '')) return;
+        const title = x.title.trim().slice(0,240);
+        if (events.some(ev => (x.id && ev.id === String(x.id)) || (ev.title === title && ev.date === x.date))) return;
+        events.push({id: x.id ? String(x.id) : `${Date.now()}-${Math.random().toString(36).slice(2,8)}`, title, date:x.date, createdAt:Number(x.createdAt) || Date.now()});
+        added++;
+      });
+      save(); render(); scrollToToday();
+      showToast(added ? `Zaimportowano: ${added}.` : 'Brak nowych zdarzeń do dodania.');
+    }).catch(() => showToast('Nieprawidłowy plik JSON.')).finally(() => { e.target.value = ''; });
+  }
+  function sortEvents() { events.sort((a,b) => a.date.localeCompare(b.date) || a.createdAt-b.createdAt); }
+  function render() {
+    sortEvents();
+    const list = $('list');
+    const shown = visibleEvents(), n = events.length, c = shown.length;
+    const w = n===1 ? 'wpis' : (n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20)) ? 'wpisy' : 'wpisów';
+    $('countLabel').textContent = !n ? '' : c!==n ? `${c} z ${n}` : `${n} ${w}`;
+    if (!events.length) {
+      list.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M7.5 3v4M16.5 3v4M3.5 9.5h17M8 14h8"/></svg><strong>Tu pojawią się Twoje zdarzenia</strong><span>Wpisz nazwę na dole, wybierz datę i naciśnij +.</span></div>`;
+      return;
+    }
+    if (events.length && !shown.length) { list.innerHTML = `<div class="empty"><strong>Brak wyników</strong><span>Zmień frazę lub filtr.</span></div>`; return; }
+    list.innerHTML = shown.map(ev => {
+      const date = formatDate(ev.date), isEditing = editingId === ev.id;
+      const dateClass = ev.date < todayISO() ? 'event-past' : ev.date === todayISO() ? 'event-today' : 'event-future';
+      return `<article class="event ${dateClass} ${isEditing?'editing':''}" data-id="${esc(ev.id)}">
+        <div class="event-date"><strong>${esc(date.day)}</strong><span>${esc(date.year)}</span></div>
+        <div class="event-main">
+          ${isEditing ? `<div class="editor"><input class="edit-name" aria-label="Edytuj nazwę" maxlength="240" value="${esc(ev.title)}"><input class="edit-date wide" aria-label="Edytuj datę" type="date" value="${esc(ev.date)}"><button class="small-btn primary save-edit" type="button">Zapisz</button><button class="small-btn cancel-edit" type="button">Anuluj</button><button class="small-btn danger delete-edit" type="button">Usuń</button></div>` : `<div class="event-title">${esc(ev.title)}</div><div class="event-meta">${esc(metaText(ev.date))}</div>`}
+        </div>
+      </article>`;
+    }).join('');
+  }
+  function applySettings() {
+    document.body.classList.toggle('dark', !!settings.dark);
+    document.body.classList.toggle('txt-bold', !!settings.textBold);
+    document.body.classList.toggle('txt-color', !!settings.textColor);
+    document.body.classList.toggle('bg-on', !!settings.bgColor);
+    document.body.classList.toggle('fs-entry', !!settings.fsEntry);
+    document.body.classList.toggle('fs-search', !!settings.fsSearch);
+    document.body.classList.toggle('fs-filters', !!settings.fsFilters);
+    $('optFsEntry').checked = !!settings.fsEntry; $('optFsSearch').checked = !!settings.fsSearch; $('optFsFilters').checked = !!settings.fsFilters;
+    $('optBold').checked = !!settings.textBold; $('optColor').checked = !!settings.textColor; $('optBg').checked = !!settings.bgColor;
+    document.documentElement.style.setProperty('--font-size', `${settings.fontSize}px`);
+    $('themeSwitch').setAttribute('aria-checked', String(!!settings.dark));
+    $('themeSwitch').title = settings.dark ? 'Przełącz na dzień' : 'Przełącz na noc';
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = settings.dark ? '#101318' : '#f8fafc';
+    save();
+  }
+  function showToast(message) {
+    const el = $('toast'); el.textContent = message; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2300);
+  }
+  function addEvent(title, date) {
+    const cleaned = title.trim(); if (!cleaned) { $('eventName').focus(); showToast('Wpisz nazwę zdarzenia.'); return; }
+    const exists = events.some(e => e.title.trim().toLocaleLowerCase('pl') === cleaned.toLocaleLowerCase('pl'));
+    if (exists && !confirm(`„${cleaned}” jest już na liście. Dodać kolejne zdarzenie z tą nazwą?`)) return;
+    const newId = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    events.push({id:newId, title:cleaned, date:date || todayISO(), createdAt:Date.now()});
+    filter = 'all'; query = ''; $('searchInput').value = ''; syncChips();
+    save(); render(); $('eventName').value=''; $('eventDate').value=todayISO(); $('eventName').blur();
+    requestAnimationFrame(() => scrollToId(newId));
+  }
+  function beginEdit(id) { editingId = id; render(); const inp = document.querySelector('.event[data-id="'+CSS.escape(id)+'"] .edit-name'); if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);} }
+  function finishEdit(id, remove=false) {
+    const ev = events.find(e => e.id === id); if (!ev) return;
+    if (remove) {
+      if (!confirm(`Usunąć zdarzenie „${ev.title}”?`)) return;
+      events = events.filter(e => e.id !== id); editingId = null; save(); render(); showToast('Zdarzenie usunięte.'); return;
+    }
+    const article = document.querySelector('.event[data-id="'+CSS.escape(id)+'"]');
+    const title = article?.querySelector('.edit-name')?.value.trim();
+    const date = article?.querySelector('.edit-date')?.value;
+    if (!title || !date) { showToast('Uzupełnij nazwę i datę.'); return; }
+    ev.title=title; ev.date=date; editingId=null; save(); render(); showToast('Zapisano zmiany.');
+  }
+
+  $('eventDate').value = todayISO();
+  $('addForm').addEventListener('submit', e => { e.preventDefault(); addEvent($('eventName').value, $('eventDate').value); });
+  $('list').addEventListener('click', e => {
+    const article = e.target.closest('.event'); if (!article) return;
+    const id = article.dataset.id;
+    if (e.target.closest('.save-edit')) finishEdit(id);
+    else if (e.target.closest('.cancel-edit')) { editingId=null; render(); }
+    else if (e.target.closest('.delete-edit')) finishEdit(id,true);
+    else {
+      const now=Date.now();
+      if (now-lastTap < 320) { lastTap=0; toggleFullscreen(); }
+      else lastTap=now;
+    }
+  });
+  $('list').addEventListener('contextmenu', e => { const a=e.target.closest('.event'); if(a){e.preventDefault(); beginEdit(a.dataset.id);} });
+  $('list').addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      clearTimeout(pressTimer); pinchStart = {distance:distance(e.touches[0],e.touches[1]),font:settings.fontSize}; return;
+    }
+    const article=e.target.closest('.event'); if(!article || e.target.closest('button,input')) return;
+    longPressed=false; const id=article.dataset.id;
+    pressTimer=setTimeout(() => { longPressed=true; beginEdit(id); if(navigator.vibrate) navigator.vibrate(18); }, 650);
+    touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  }, {passive:true});
+  $('list').addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && pinchStart) {
+      const d=distance(e.touches[0],e.touches[1]);
+      const delta=d-pinchStart.distance;
+      if (Math.abs(delta)>12) {
+        settings.fontSize=Math.max(12,Math.min(30,Math.round(pinchStart.font+delta/18)));
+        document.documentElement.style.setProperty('--font-size',`${settings.fontSize}px`);
+      }
+      e.preventDefault(); return;
+    }
+    if(touchStart && e.touches[0] && (Math.abs(e.touches[0].clientX-touchStart.x)>10 || Math.abs(e.touches[0].clientY-touchStart.y)>10)) clearTimeout(pressTimer);
+  }, {passive:false});
+  $('list').addEventListener('touchend', () => { if (pinchStart) save(); clearTimeout(pressTimer); touchStart=null; pinchStart=null; }, {passive:true});
+  $('list').addEventListener('touchcancel', () => { clearTimeout(pressTimer); touchStart=null; pinchStart=null; }, {passive:true});
+  function distance(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
+  $('settingsBtn').addEventListener('click', () => $('settingsModal').classList.add('show'));
+  $('closeSettings').addEventListener('click', () => $('settingsModal').classList.remove('show'));
+  $('settingsModal').addEventListener('click', e => { if(e.target === $('settingsModal')) $('settingsModal').classList.remove('show'); });
+  $('themeSwitch').addEventListener('click', () => { settings.dark=!settings.dark; applySettings(); });
+  $('fontDown').addEventListener('click', () => { settings.fontSize=Math.max(12,settings.fontSize-1); applySettings(); });
+  $('fontUp').addEventListener('click', () => { settings.fontSize=Math.min(30,settings.fontSize+1); applySettings(); });
+  $('fullscreenBtn').addEventListener('click', () => { toggleFullscreen(); $('settingsModal').classList.remove('show'); });
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch {} document.body.classList.remove('fullscreen'); return; }
+    if (document.documentElement.requestFullscreen) {
+      try { await document.documentElement.requestFullscreen(); document.body.classList.add('fullscreen'); return; } catch {}
+    }
+    document.body.classList.toggle('fullscreen');
+    showToast(document.body.classList.contains('fullscreen') ? 'Ukryto nagłówek. Na iPhonie pełny ekran najlepiej działa po dodaniu do ekranu początkowego.' : 'Przywrócono nagłówek.');
+  }
+  $('clearAllBtn').addEventListener('click', () => {
+    if (!events.length) { showToast('Lista jest już pusta.'); return; }
+    if(confirm('Usunąć wszystkie zdarzenia? Tej operacji nie można cofnąć.')) { events=[]; editingId=null; save(); render(); $('settingsModal').classList.remove('show'); showToast('Lista została wyczyszczona.'); }
+  });
+  document.addEventListener('keydown', e => { if(e.key==='Escape') { $('settingsModal').classList.remove('show'); if(editingId){editingId=null;render();} } });
+  $('app').addEventListener('dblclick', e => { if(e.target.closest('input,button,.event')) return; toggleFullscreen(); });
+  $('searchInput').addEventListener('input', e => { query = e.target.value; render(); scrollToToday(); });
+  document.querySelector('.filters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if (!b) return; filter = b.dataset.filter; syncChips(); render(); scrollToToday(); });
+  [['optBold','textBold'],['optColor','textColor'],['optBg','bgColor'],['optFsEntry','fsEntry'],['optFsSearch','fsSearch'],['optFsFilters','fsFilters']].forEach(([id,key]) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; applySettings(); }));
+  $('exportBtn').addEventListener('click', exportJSON);
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', importJSON);
+
+  // Lekki Service Worker wbudowany przez Blob na HTTPS (żeby nie tworzyć osobnego pliku sw.js)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      const swCode = `
+        const CACHE = 'kalendarzyk-v1';
+        self.addEventListener('install', e => {
+          e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', location.href])));
+          self.skipWaiting();
+        });
+        self.addEventListener('fetch', e => {
+          if (e.request.method !== 'GET') return;
+          e.respondWith(
+            caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+              if (res && res.status === 200 && res.type === 'basic') {
+                const copy = res.clone();
+                caches.open(CACHE).then(c => c.put(e.request, copy));
+              }
+              return res;
+            }).catch(() => caches.match('./')))
+          );
+        });
+      `;
+      const swUrl = URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }));
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    });
+  }
+
+  applySettings(); render();
+  requestAnimationFrame(scrollToToday);
+})();
+</script>
+</body>
+</html>
+```[cite: 1]
+
+Zapisz to jako `index.html`, wrzuć na darmowy hosting HTTPS (np. Netlify Drop lub GitHub Pages), otwórz w Safari na iPhonie i wybierz **Do ekranu początkowego**. Jeśli chcesz, mogę Ci też wygenerować gotowe ikony PNG (`icon-180.png` i `icon-512.png`), żeby nie trzeba było ich robić ręcznie[cite: 1].

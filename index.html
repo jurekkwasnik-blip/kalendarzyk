@@ -425,6 +425,15 @@ body.fullscreen .list-wrap { padding-top:10px; }
   requestAnimationFrame(scrollToToday);
 })();
 </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.error('Błąd rejestracji Service Workera:', err);
+      });
+    });
+  }
+</script>
 </body>
 </html>
 ```[cite: 1]
